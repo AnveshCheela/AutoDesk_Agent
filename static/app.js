@@ -376,8 +376,39 @@ function renderSessions() {
     state.sessions.forEach(session => {
         const item = document.createElement('div');
         item.className = `session-item ${session.id === state.sessionId ? 'active' : ''}`;
-        item.textContent = session.title;
-        item.title = new Date(session.timestamp).toLocaleString();
+        
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'session-title';
+        titleSpan.textContent = session.title;
+        titleSpan.title = new Date(session.timestamp).toLocaleString();
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'session-delete-btn';
+        deleteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>';
+        deleteBtn.title = "Delete conversation";
+        
+        deleteBtn.addEventListener('click', async (e) => {
+            e.stopPropagation(); // Prevent clicking the item
+            if (confirm("Are you sure you want to delete this conversation?")) {
+                try {
+                    await fetch(`/api/chat/history/${session.id}`, { method: 'DELETE' });
+                    // Remove from state
+                    state.sessions = state.sessions.filter(s => s.id !== session.id);
+                    localStorage.setItem('autodesk_sessions', JSON.stringify(state.sessions));
+                    // If active session deleted, clear chat
+                    if (state.sessionId === session.id) {
+                        startNewChat();
+                    }
+                    renderSessions();
+                } catch (err) {
+                    console.error("Failed to delete session", err);
+                }
+            }
+        });
+        
+        item.appendChild(titleSpan);
+        item.appendChild(deleteBtn);
+
         item.addEventListener('click', async () => {
             state.sessionId = session.id;
             switchView('chat');

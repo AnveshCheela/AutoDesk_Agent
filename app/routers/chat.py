@@ -98,6 +98,17 @@ async def get_chat_history(session_id: str, limit: int = 50):
         raise HTTPException(status_code=500, detail=f"Failed to fetch history: {str(e)}")
 
 
+@router.delete("/chat/history/{session_id}")
+async def delete_chat_history(session_id: str):
+    """Delete the conversation history for a specific session."""
+    from app.services.memory import clear_history
+    try:
+        clear_history(session_id)
+        return {"status": "success", "session_id": session_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete history: {str(e)}")
+
+
 # ============================================
 # Knowledge Base Endpoints
 # ============================================

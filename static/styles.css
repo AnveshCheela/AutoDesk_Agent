@@ -288,9 +288,41 @@ a {
     font-size: var(--font-size-sm);
     cursor: pointer;
     transition: all var(--transition-fast);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.session-title {
+    flex: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.session-delete-btn {
+    opacity: 0;
+    color: var(--color-text-sidebar);
+    background: transparent;
+    border: none;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.session-item:hover .session-delete-btn {
+    opacity: 0.6;
+}
+
+.session-delete-btn:hover {
+    opacity: 1 !important;
+    background: rgba(255, 60, 60, 0.2);
+    color: #ff6b6b;
 }
 
 .session-item:hover {
