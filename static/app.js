@@ -416,7 +416,55 @@ function renderSessions() {
         titleSpan.textContent = session.title;
         titleSpan.title = new Date(session.timestamp).toLocaleString();
         
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'session-actions';
+        
+        const menuBtn = document.createElement('button');
+        menuBtn.className = 'session-menu-btn';
+        menuBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>';
+        
+        const dropdownDiv = document.createElement('div');
+        dropdownDiv.className = 'session-menu-dropdown';
+        
+        const deleteAction = document.createElement('button');
+        deleteAction.className = 'session-delete-action';
+        deleteAction.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg> Delete';
+        
+        dropdownDiv.appendChild(deleteAction);
+        actionsDiv.appendChild(menuBtn);
+        actionsDiv.appendChild(dropdownDiv);
+        
+        // Menu toggle logic
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // prevent clicking the session
+            // Close others
+            document.querySelectorAll('.session-menu-dropdown.show').forEach(d => {
+                if (d !== dropdownDiv) d.classList.remove('show');
+            });
+            dropdownDiv.classList.toggle('show');
+        });
+        
+        // Delete action logic
+        deleteAction.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            dropdownDiv.classList.remove('show');
+            if (confirm("Are you sure you want to delete this conversation?")) {
+                try {
+                    await fetch(`/api/chat/history/${session.id}`, { method: 'DELETE' });
+                    state.sessions = state.sessions.filter(s => s.id !== session.id);
+                    localStorage.setItem('autodesk_sessions', JSON.stringify(state.sessions));
+                    if (state.sessionId === session.id) {
+                        startNewChat();
+                    }
+                    renderSessions();
+                } catch (err) {
+                    console.error("Failed to delete session", err);
+                }
+            }
+        });
+        
         item.appendChild(titleSpan);
+        item.appendChild(actionsDiv);
 
         item.addEventListener('click', async () => {
             state.sessionId = session.id;
@@ -424,6 +472,11 @@ function renderSessions() {
             await loadSessionHistory(session.id);
         });
         container.appendChild(item);
+    });
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.session-menu-dropdown.show').forEach(d => d.classList.remove('show'));
     });
 }
 
