@@ -401,17 +401,17 @@ async function loadSessionHistory(sessionId) {
         if (!response.ok) throw new Error("Failed to load history");
         
         const data = await response.json();
-        
-        // Remove loading
         loadingEl.remove();
         
-        // Render messages
         if (data.messages && data.messages.length > 0) {
             data.messages.forEach(msg => {
                 if (msg.role === 'user' || msg.role === 'assistant') {
                     appendMessage(msg.role === 'assistant' ? 'agent' : 'user', msg.content);
                 }
             });
+        } else {
+            // History is empty (e.g. wiped after server restart if using in-memory store)
+            appendMessage('agent', '*Note: The history for this session was cleared due to a server restart. You can continue the conversation below!*');
         }
     } catch (e) {
         loadingEl.remove();

@@ -26,8 +26,29 @@ except Exception as e:
     logger.warning(f"Failed to connect to Redis: {e}. Falling back to in-memory store.")
     redis_client = None
 
-# Fallback in-memory store if Redis is unavailable
+import os
+
+# Fallback persistent JSON store if Redis is unavailable
+FALLBACK_FILE = "data/history.json"
 _memory_store = {}
+
+def _load_fallback():
+    global _memory_store
+    if os.path.exists(FALLBACK_FILE):
+        try:
+            with open(FALLBACK_FILE, "r") as f:
+                _memory_store = json.load(f)
+        except Exception:
+            _memory_store = {}
+
+def _save_fallback():
+    os.makedirs("data", exist_ok=True)
+    with open(FALLBACK_FILE, "w") as f:
+        json.dump(_memory_store, f)
+
+# Load it initially
+if not redis_client:
+    _load_fallback()
 
 
 def _get_session_key(session_id: str) -> str:
@@ -38,19 +59,10 @@ def _get_session_key(session_id: str) -> str:
 def get_conversation_history(session_id: str, limit: int = 10) -> List[Dict]:
     """
     Retrieve the recent conversation history for a session.
-    
-    Args:
-        session_id: Unique identifier for the user's session.
-        limit: Maximum number of previous messages to return.
-        
-    Returns:
-        List of message dicts (e.g., [{"role": "user", "content": "..."}]).
     """
     if redis_client:
         try:
             key = _get_session_key(session_id)
-            # Retrieve from Redis list (returns oldest to newest if we push right and trim)
-            # Let's get the entire list, we trim it on save
             raw_messages = redis_client.lrange(key, 0, -1)
             history = [json.loads(msg) for msg in raw_messages]
             return history[-limit:] if limit > 0 else history
@@ -65,11 +77,6 @@ def get_conversation_history(session_id: str, limit: int = 10) -> List[Dict]:
 def append_to_history(session_id: str, messages: List[Dict], max_history: int = 20):
     """
     Append new messages to the session's conversation history.
-    
-    Args:
-        session_id: Unique identifier for the user's session.
-        messages: List of new message dicts to append.
-        max_history: Maximum number of messages to retain in history.
     """
     if not messages:
         return
@@ -77,16 +84,9 @@ def append_to_history(session_id: str, messages: List[Dict], max_history: int = 
     if redis_client:
         try:
             key = _get_session_key(session_id)
-            # Push all messages to the right of the list
             json_messages = [json.dumps(msg) for msg in messages]
             redis_client.rpush(key, *json_messages)
-            
-            # Trim the list to retain only the most recent `max_history` messages
-            # LTRIM keeps elements from start to end (0-indexed). 
-            # To keep last N items, use -N to -1.
             redis_client.ltrim(key, -max_history, -1)
-            
-            # Set an expiration on the session key (e.g., 24 hours)
             redis_client.expire(key, 86400)
             
         except Exception as e:
@@ -97,6 +97,7 @@ def append_to_history(session_id: str, messages: List[Dict], max_history: int = 
             _memory_store[session_id] = []
         _memory_store[session_id].extend(messages)
         _memory_store[session_id] = _memory_store[session_id][-max_history:]
+        _save_fallback()
 
 
 def clear_history(session_id: str):
@@ -109,3 +110,4 @@ def clear_history(session_id: str):
     else:
         if session_id in _memory_store:
             del _memory_store[session_id]
+            _save_fallback()
