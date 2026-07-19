@@ -87,6 +87,12 @@ function bindEvents() {
     if (elements.newChatBtn) {
         elements.newChatBtn.addEventListener('click', startNewChat);
     }
+    
+    // Delete current chat
+    const deleteBtn = $('#delete-chat-header');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', deleteCurrentChat);
+    }
 
     // Navigation
     elements.navChat.addEventListener('click', () => switchView('chat'));
@@ -176,6 +182,10 @@ async function sendMessage() {
 
         // Save session
         saveCurrentSession(message);
+        
+        // Show delete button
+        const deleteBtn = $('#delete-chat-header');
+        if (deleteBtn) deleteBtn.style.display = 'flex';
 
     } catch (error) {
         typingEl.remove();
@@ -322,12 +332,36 @@ function startNewChat() {
         elements.messagesContainer.innerHTML = getWelcomeScreenHTML();
         bindWelcomeCards();
     }
+    
+    // Hide delete button on new chat
+    const deleteBtn = $('#delete-chat-header');
+    if (deleteBtn) deleteBtn.style.display = 'none';
 
     // Clear trace
     elements.traceContent.innerHTML = '<p class="trace-empty">Send a message to see the agent\'s reasoning trace here.</p>';
 
     // Close sidebar on mobile
     if (state.sidebarOpen) toggleSidebar();
+}
+
+async function deleteCurrentChat() {
+    if (!state.sessionId) return;
+    
+    if (confirm("Are you sure you want to delete this conversation?")) {
+        try {
+            await fetch(`/api/chat/history/${state.sessionId}`, { method: 'DELETE' });
+            
+            // Remove from state
+            state.sessions = state.sessions.filter(s => s.id !== state.sessionId);
+            localStorage.setItem('autodesk_sessions', JSON.stringify(state.sessions));
+            
+            // Clear UI by starting a new chat
+            startNewChat();
+            renderSessions();
+        } catch (err) {
+            console.error("Failed to delete session", err);
+        }
+    }
 }
 
 function saveCurrentSession(lastMessage) {
@@ -382,32 +416,7 @@ function renderSessions() {
         titleSpan.textContent = session.title;
         titleSpan.title = new Date(session.timestamp).toLocaleString();
         
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'session-delete-btn';
-        deleteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>';
-        deleteBtn.title = "Delete conversation";
-        
-        deleteBtn.addEventListener('click', async (e) => {
-            e.stopPropagation(); // Prevent clicking the item
-            if (confirm("Are you sure you want to delete this conversation?")) {
-                try {
-                    await fetch(`/api/chat/history/${session.id}`, { method: 'DELETE' });
-                    // Remove from state
-                    state.sessions = state.sessions.filter(s => s.id !== session.id);
-                    localStorage.setItem('autodesk_sessions', JSON.stringify(state.sessions));
-                    // If active session deleted, clear chat
-                    if (state.sessionId === session.id) {
-                        startNewChat();
-                    }
-                    renderSessions();
-                } catch (err) {
-                    console.error("Failed to delete session", err);
-                }
-            }
-        });
-        
         item.appendChild(titleSpan);
-        item.appendChild(deleteBtn);
 
         item.addEventListener('click', async () => {
             state.sessionId = session.id;
@@ -444,6 +453,10 @@ async function loadSessionHistory(sessionId) {
             // History is empty (e.g. wiped after server restart if using in-memory store)
             appendMessage('agent', '*Note: The history for this session was cleared due to a server restart. You can continue the conversation below!*');
         }
+        
+        const deleteBtn = $('#delete-chat-header');
+        if (deleteBtn) deleteBtn.style.display = 'flex';
+        
     } catch (e) {
         loadingEl.remove();
         console.error(e);
