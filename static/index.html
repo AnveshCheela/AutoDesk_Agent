@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AutoDesk Agent — an AI-powered IT helpdesk assistant that answers policy questions and manages tickets.">
+    <title>AutoDesk Agent — IT Helpdesk Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" opacity="0.8"/>
+                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="logo-text">AutoDesk</span>
+                <span class="logo-badge">Agent</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <button class="nav-btn active" data-view="chat" id="nav-chat">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span>Chat</span>
+            </button>
+            <button class="nav-btn" data-view="sessions" id="nav-sessions">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                <span>Threads</span>
+            </button>
+        </nav>
+
+        <!-- Session History (shown when Threads is active) -->
+        <div class="session-list" id="session-list" style="display: none;">
+            <div class="session-list-header">
+                <span>Recent Conversations</span>
+                <button class="new-chat-btn" id="new-chat-btn" title="New conversation">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="sessions-container" id="sessions-container">
+                <!-- Sessions will be populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="sidebar-actions" id="sidebar-actions">
+            <p class="actions-title">Quick Actions</p>
+            <button class="action-chip" data-prompt="How do I reset my password?">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Password Reset
+            </button>
+            <button class="action-chip" data-prompt="How do I connect to the VPN?">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                VPN Access
+            </button>
+            <button class="action-chip" data-prompt="I need to request a new laptop. What's the process?">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Hardware Request
+            </button>
+            <button class="action-chip" data-prompt="Create a ticket for my broken monitor. High priority.">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                Create Ticket
+            </button>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <span>System Online</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="chat-main" id="chat-main">
+        <!-- Top bar -->
+        <header class="chat-header">
+            <button class="menu-toggle" id="menu-toggle">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+            </button>
+            <div class="header-info">
+                <h1>AutoDesk Agent</h1>
+                <span class="header-subtitle">IT Helpdesk Assistant</span>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" id="toggle-trace" title="Show agent trace">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                </button>
+                <button class="header-btn" id="new-chat-header" title="New conversation">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Messages Container -->
+        <div class="messages-wrapper">
+            <div class="messages-container" id="messages-container">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" opacity="0.6"/>
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h2>Hello! I'm AutoDesk Agent</h2>
+                    <p>Your AI-powered IT helpdesk assistant. I can answer questions about company IT policies, check ticket statuses, and create new support tickets for you.</p>
+                    <div class="welcome-cards">
+                        <button class="welcome-card" data-prompt="How do I reset my password?">
+                            <div class="card-icon">🔐</div>
+                            <div class="card-text">
+                                <strong>Password Help</strong>
+                                <span>Reset passwords & MFA setup</span>
+                            </div>
+                        </button>
+                        <button class="welcome-card" data-prompt="I can't connect to the VPN. Help me troubleshoot.">
+                            <div class="card-icon">🌐</div>
+                            <div class="card-text">
+                                <strong>VPN Issues</strong>
+                                <span>Access & troubleshooting</span>
+                            </div>
+                        </button>
+                        <button class="welcome-card" data-prompt="I need to report a security incident.">
+                            <div class="card-icon">🛡️</div>
+                            <div class="card-text">
+                                <strong>Security Incident</strong>
+                                <span>Report & escalation</span>
+                            </div>
+                        </button>
+                        <button class="welcome-card" data-prompt="Create a ticket for my laptop keyboard not working. Medium priority.">
+                            <div class="card-icon">🎫</div>
+                            <div class="card-text">
+                                <strong>Create a Ticket</strong>
+                                <span>Submit a new IT request</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Agent Trace Panel (hidden by default) -->
+            <div class="trace-panel" id="trace-panel" style="display: none;">
+                <div class="trace-header">
+                    <h3>Agent Trace</h3>
+                    <button class="trace-close" id="trace-close">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="trace-content" id="trace-content">
+                    <p class="trace-empty">Send a message to see the agent's reasoning trace here.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <div class="input-container">
+                <textarea
+                    id="message-input"
+                    placeholder="Ask me anything about IT policies, tickets, or tech support..."
+                    rows="1"
+                    maxlength="2000"
+                ></textarea>
+                <button class="send-btn" id="send-btn" disabled title="Send message">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                </button>
+            </div>
+            <p class="input-disclaimer">AutoDesk Agent may make mistakes. Verify critical information with your IT department.</p>
+        </div>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
