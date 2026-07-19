@@ -87,6 +87,17 @@ async def chat(request: ChatRequest):
         raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
 
 
+@router.get("/chat/history/{session_id}")
+async def get_chat_history(session_id: str, limit: int = 50):
+    """Get the conversation history for a specific session."""
+    from app.services.memory import get_conversation_history
+    try:
+        history = get_conversation_history(session_id, limit=limit)
+        return {"session_id": session_id, "messages": history}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch history: {str(e)}")
+
+
 # ============================================
 # Knowledge Base Endpoints
 # ============================================

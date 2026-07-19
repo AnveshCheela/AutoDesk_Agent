@@ -378,13 +378,46 @@ function renderSessions() {
         item.className = `session-item ${session.id === state.sessionId ? 'active' : ''}`;
         item.textContent = session.title;
         item.title = new Date(session.timestamp).toLocaleString();
-        item.addEventListener('click', () => {
-            // For now, just start a new chat with that session ID
+        item.addEventListener('click', async () => {
             state.sessionId = session.id;
             switchView('chat');
+            await loadSessionHistory(session.id);
         });
         container.appendChild(item);
     });
+}
+
+async function loadSessionHistory(sessionId) {
+    elements.messagesContainer.innerHTML = '';
+    if (elements.welcomeScreen) {
+        elements.welcomeScreen.style.display = 'none';
+    }
+    
+    // Show a loading indicator
+    const loadingEl = showTypingIndicator();
+    
+    try {
+        const response = await fetch(`/api/chat/history/${sessionId}`);
+        if (!response.ok) throw new Error("Failed to load history");
+        
+        const data = await response.json();
+        
+        // Remove loading
+        loadingEl.remove();
+        
+        // Render messages
+        if (data.messages && data.messages.length > 0) {
+            data.messages.forEach(msg => {
+                if (msg.role === 'user' || msg.role === 'assistant') {
+                    appendMessage(msg.role === 'assistant' ? 'agent' : 'user', msg.content);
+                }
+            });
+        }
+    } catch (e) {
+        loadingEl.remove();
+        console.error(e);
+        appendMessage('agent', 'Failed to load conversation history.');
+    }
 }
 
 // ============================================
